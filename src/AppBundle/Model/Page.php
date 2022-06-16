@@ -54,7 +54,7 @@ class Page extends Model
      * Get a Page instance given a database row (either from or JOINed on the page table).
      * @param Project $project
      * @param array $row Must contain 'page_title' and 'page_namespace'. May contain 'page_len'.
-     * @return static
+     * @return self
      */
     public static function newFromRow(Project $project, array $row): self
     {
@@ -67,7 +67,9 @@ class Page extends Model
             $fullPageTitle = $namespaces[$row['page_namespace']].":$pageTitle";
         }
 
+        // FIXME: these changes need tests
         $page = new self($project, $fullPageTitle);
+        $page->namespace = (int)$row['page_namespace'];
         if (isset($row['page_len'])) {
             $page->length = (int)$row['page_len'];
         }

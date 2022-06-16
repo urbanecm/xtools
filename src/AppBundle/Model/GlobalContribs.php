@@ -141,6 +141,7 @@ class GlobalContribs extends Model
             $this->limit + 1,
             $this->offset
         );
+
         $globalEdits = [];
 
         foreach ($globalRevisionsData as $revision) {
@@ -159,7 +160,6 @@ class GlobalContribs extends Model
         // Sort and prune, before adding more.
         krsort($globalEdits);
         $this->globalEdits = array_slice($globalEdits, 0, $this->limit);
-
         return $this->globalEdits;
     }
 
@@ -171,6 +171,7 @@ class GlobalContribs extends Model
         }
 
         $page = $project->getRepository()
+            /** FIXME: USE Page::newFromRow() here? */
             ->getPage($project, ltrim($nsName.':'.$revision['page_title'], ':'));
         return new Edit($page, $revision);
     }

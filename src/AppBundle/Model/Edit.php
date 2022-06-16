@@ -96,6 +96,18 @@ class Edit extends Model
     }
 
     /**
+     * Create an Edit object from a database row. Assume a revision JOIN on page with applicable fields.
+     * @param Project $project
+     * @param array $row
+     * @return Edit
+     */
+    public static function newFromRow(Project $project, array $row): Edit
+    {
+        $page = Page::newFromRow($project, $row);
+        return new self($page, $row);
+    }
+
+    /**
      * Unique identifier for this Edit, to be used in cache keys.
      * @see Repository::getCacheKey()
      * @return string
@@ -434,5 +446,43 @@ class Edit extends Model
     public function getDiffHtml(): ?string
     {
         return $this->getRepository()->getDiffHtml($this);
+    }
+
+    /**
+     * Formats the data as an array for use in JSON APIs.
+     * @param bool $includeUsername False for most tools such as Global Contribs, AutoEdits, etc.
+     * @return array
+     * @internal This method assumes the Edit was constructed with data already filled in from a database query.
+     */
+    public function getForJson(bool $includeUsername = false): array
+    {
+        $nsName = $this->getProject()->getNamespaces()[$this->namespace];
+        $ret = [
+            'full_page_title' => $nsName.':'.$this->getPage()->getTitle(true),
+            'page_title' => $this->getPage()->getTitle(true),
+            'page_namespace' => $this->getPage()->getNamespace(),
+            'rev_id' => $this->id,
+            'timestamp' => $this->getUTCTimestamp(),
+            'minor' => $this->minor,
+            'length' => $this->length,
+            'length_change' => $this->lengthChange,
+            'comment' => $this->comment,
+            'reverted' => $this->reverted,
+        ];
+        if ($includeUsername) {
+            $ret = [ 'username' => $this->getUser()->getUsername() ] + $ret;
+        }
+
+        return $ret;
+    }
+
+    private function addFullPageTitlesAndContinue(array $data): array
+    {
+        // Add full_page_title (in addition to the existing page_title and page_namespace keys).
+        $data = array_map(function ($rev) {
+            $nsName = $this->project->getNamespaces()[$rev['page_namespace']];
+            $rev['full_page_title'] = $nsName.':'.$rev['page_title'];
+            return $rev;
+        }, $data);
     }
 }
